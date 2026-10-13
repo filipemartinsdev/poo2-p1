@@ -1,24 +1,27 @@
 package com.poo2p1.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class Funcionario {
+    private String matricula;
     private String nome;
     private String CPF;
+    private LocalDate dataNascimento;
     private Cargo cargo;
     private BigDecimal salario;
-    private Date dataContratacao;
-    private Date dataNascimento;
+    private LocalDate dataContratacao;
     private Endereco endereco;
 
-    public Funcionario(String nome, String CPF, Cargo cargo, BigDecimal salario, Date dataContratacao, Date dataNascimento, Endereco endereco) {
+    public Funcionario(String matricula, String nome, String CPF, LocalDate dataNascimento, Cargo cargo, BigDecimal salario, LocalDate dataContratacao, Endereco endereco) {
+        this.matricula = matricula;
         this.nome = nome;
         this.CPF = CPF;
+        this.dataNascimento = dataNascimento;
         this.cargo = cargo;
         this.salario = salario;
         this.dataContratacao = dataContratacao;
-        this.dataNascimento = dataNascimento;
         this.endereco = endereco;
     }
 
@@ -54,19 +57,19 @@ public class Funcionario {
         this.salario = salario;
     }
 
-    public Date getDataContratacao() {
+    public LocalDate getDataContratacao() {
         return dataContratacao;
     }
 
-    public void setDataContratacao(Date dataContratacao) {
+    public void setDataContratacao(LocalDate dataContratacao) {
         this.dataContratacao = dataContratacao;
     }
 
-    public Date getDataNascimento() {
+    public LocalDate getDataNascimento() {
         return dataNascimento;
     }
 
-    public void setDataNascimento(Date dataNascimento) {
+    public void setDataNascimento(LocalDate dataNascimento) {
         this.dataNascimento = dataNascimento;
     }
 
@@ -76,5 +79,13 @@ public class Funcionario {
 
     public void setEndereco(Endereco endereco) {
         this.endereco = endereco;
+    }
+
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
     }
 }

@@ -1,22 +1,35 @@
 package com.poo2p1.model;
 
 public class Endereco {
+    private Integer id;
     private String cidade;
     private String estado;
     private String cep;
+    private String bairro;
     private String logradouro;
     private String numero;
     private String complemento;
-    private String bairro;
 
-    public Endereco(String cidade, String estado, String cep, String logradouro, String numero, String complemento, String bairro) {
+    public Endereco() {
+    }
+
+    public Endereco(Integer id, String cidade, String estado, String cep, String bairro, String logradouro, String numero, String complemento) {
+        this.id = id;
         this.cidade = cidade;
         this.estado = estado;
         this.cep = cep;
+        this.bairro = bairro;
         this.logradouro = logradouro;
         this.numero = numero;
         this.complemento = complemento;
-        this.bairro = bairro;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getCidade() {
