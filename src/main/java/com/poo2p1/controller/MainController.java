@@ -319,10 +319,42 @@ public class MainController {
     }
 
     private void setupDateNascimento(){
+        this.dateDataNascimento.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return date != null ? dateFormatter.format(date) : "";
+            }
+
+            @Override
+            public LocalDate fromString(String text) {
+                if (text == null || text.isBlank()) {
+                    return null;
+                }
+
+                return LocalDate.parse(text, dateFormatter);
+            }
+        });
+
         this.labelDataNascimento.setLabelFor(this.dateDataNascimento);
     }
 
     private void setupDateContratacao(){
+        this.dateDataContratacao.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return date != null ? dateFormatter.format(date) : "";
+            }
+
+            @Override
+            public LocalDate fromString(String text) {
+                if (text == null || text.isBlank()) {
+                    return null;
+                }
+
+                return LocalDate.parse(text, dateFormatter);
+            }
+        });
+
         this.labelDataContratacao.setLabelFor(this.dateDataContratacao);
     }
 
