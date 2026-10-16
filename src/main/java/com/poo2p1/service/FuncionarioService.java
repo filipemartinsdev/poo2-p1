@@ -69,6 +69,9 @@ public class FuncionarioService {
         if (request.salario() == null)
             throw new RuntimeException("Salário é obrigatório");
 
+        if (request.salario() <= 0)
+            throw new RuntimeException("Salário deve ser maior que zero");
+
         if (request.dataNascimento() == null)
             throw new RuntimeException("Data de nascimento é obrigatória");
 
