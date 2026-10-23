@@ -8,6 +8,7 @@ import com.poo2p1.model.Funcionario;
 import com.poo2p1.persistence.FuncionarioRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public class FuncionarioService {
@@ -76,6 +77,9 @@ public class FuncionarioService {
 
         if (request.dataNascimento() == null)
             throw new RuntimeException("Data de nascimento é obrigatória");
+
+        if (request.dataNascimento().isAfter(LocalDate.now().minusYears(18)))
+            throw new RuntimeException("O funcionário deve ser maior de idade");
 
         if (request.dataContratacao() == null)
             throw new RuntimeException("Data de contratação é obrigatória");
