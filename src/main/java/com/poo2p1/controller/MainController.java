@@ -17,14 +17,20 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class MainController {
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -54,6 +60,18 @@ public class MainController {
     private TextField inputFiltroEstado;
 
     @FXML
+    private Label labelFiltroSalarioMin;
+
+    @FXML
+    private TextField inputFiltroSalarioMin;
+
+    @FXML
+    private Label labelFiltroSalarioMax;
+
+    @FXML
+    private TextField inputFiltroSalarioMax;
+
+    @FXML
     private TableView<TableBuscarItem> tableBuscar;
 
     private ObservableList<TableBuscarItem> tableBuscarItems = FXCollections.observableArrayList();
@@ -77,6 +95,9 @@ public class MainController {
     private TableColumn<TableBuscarItem, String> colBuscarNome;
 
     @FXML
+    private TableColumn<TableBuscarItem, String> colBuscarEstado;
+
+    @FXML
     private TableColumn<TableBuscarItem, BigDecimal> colBuscarSalario;
 
     @FXML
@@ -84,6 +105,9 @@ public class MainController {
 
     @FXML
     private Button btnLimparFiltros;
+
+    @FXML
+    private Button btnExportarRelatorio;
 
     @FXML
     private Button btnRegistrar;
@@ -172,6 +196,9 @@ public class MainController {
         Platform.runLater(this::setupCbFiltroCargo);
         Platform.runLater(this::setupInputFiltroMatricula);
         Platform.runLater(this::setupInputFiltroEstado);
+        Platform.runLater(this::setupInputFiltroSalarioMin);
+        Platform.runLater(this::setupInputFiltroSalarioMax);
+        Platform.runLater(this::setupInputFiltroEstado);
         Platform.runLater(this::setupTableBuscar);
 
         Platform.runLater(this::setupInputNome);
@@ -216,6 +243,14 @@ public class MainController {
         this.labelFiltroEstado.setLabelFor(this.inputFiltroEstado);
     }
 
+    private void setupInputFiltroSalarioMin(){
+        this.labelFiltroSalarioMin.setLabelFor(this.inputFiltroSalarioMin);
+    }
+
+    private void setupInputFiltroSalarioMax(){
+        this.labelFiltroSalarioMax.setLabelFor(this.inputFiltroSalarioMax);
+    }
+
     private void setupTableBuscar() {
         this.tableBuscar.setItems(tableBuscarItems);
 
@@ -226,6 +261,7 @@ public class MainController {
         this.setupColBuscarCargo();
         this.setupColBuscarSalario();
         this.setupColBuscarDataContratacao();
+        this.setupColBuscarEstado();
     }
 
     private void setupColBuscarMatricula(){
@@ -282,6 +318,10 @@ public class MainController {
                 setText(item != null ? dateFormatter.format(item) : "");
             }
         });
+    }
+
+    private void setupColBuscarEstado(){
+        this.colBuscarEstado.setCellValueFactory(new PropertyValueFactory<>("estado"));
     }
 
 
@@ -391,17 +431,41 @@ public class MainController {
         inputFiltroMatricula.clear();
         inputFiltroEstado.clear();
         cbFiltroCargo.setValue(null);
+        inputFiltroSalarioMin.clear();
+        inputFiltroSalarioMax.clear();
     }
 
     @FXML
     void buscar(ActionEvent event) {
+        String matricula = this.inputFiltroMatricula.getText();;
+        Cargo cargo = this.cbFiltroCargo.getValue();
+        String estado = this.inputFiltroEstado.getText();
+        Double salarioMin;
+        Double salarioMax;
+
+        try {
+            salarioMin = getFiltroSalarioMin();
+        } catch (RuntimeException e) {
+            showError("Filtro inválido", "Valor inválido para salário mínimo");
+            return;
+        }
+
+        try {
+            salarioMax = getFiltroSalarioMax();
+        } catch (RuntimeException e) {
+            showError("Filtro inválido", "Valor inválido para salário máximo");
+            return;
+        }
+
         Task<List<Funcionario>> task = new Task<>() {
             @Override
             protected List<Funcionario> call() throws Exception {
                 return funcionarioService.getAllBy(
-                    inputFiltroMatricula.getText(),
-                    cbFiltroCargo.getValue(),
-                    inputFiltroEstado.getText()
+                    matricula,
+                    cargo,
+                    estado,
+                    salarioMin,
+                    salarioMax
                 );
             }
         };
@@ -422,6 +486,153 @@ public class MainController {
         new Thread(task).start();
     }
 
+
+    private Double getFiltroSalarioMin() {
+        try {
+            return this.inputFiltroSalarioMin.getText().isBlank() ? null : Double.parseDouble(this.inputFiltroSalarioMin.getText());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Valor inválido de salário mínimo");
+        }
+    }
+
+    private Double getFiltroSalarioMax() {
+        try {
+            return this.inputFiltroSalarioMax.getText().isBlank() ? null : Double.parseDouble(this.inputFiltroSalarioMax.getText());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Valor inválido de salário máximo");
+        }
+    }
+
+    @FXML
+    void exportarRelatorio(ActionEvent event){
+        if (this.tableBuscarItems.isEmpty()) {
+            showError("Erro ao exportar relatório", "A tabela está vazia, não há dados para exportar");
+            return;
+        }
+
+        Path path;
+
+        try {
+            path = getDownloadPath();
+        } catch (RuntimeException e) {
+            showError("Erro ao exportar relatório", "Não foi possível exportar o relatório");
+            return;
+        }
+
+        Path destinationPath = Paths.get(path.toString(), "relatorio.csv");
+
+        if(Files.exists(destinationPath))
+            if (askToOverwriteFile())
+                deleteFile(destinationPath);
+            else
+                return;
+
+        createFile(destinationPath);
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                writeRelatorio(destinationPath);
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            showInfo("Relatório exportado", "O relatório foi exportado com sucesso");
+        });
+
+        task.setOnFailed(e -> {
+            showError("Erro ao exportar relatório", "Causa: " + e.getSource().getException().getMessage());
+        });
+
+        new Thread(task).start();
+    }
+
+    private void createFile(Path destinationPath) {
+        try {
+            Files.createFile(destinationPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void writeRelatorio(Path destinationPath) {
+        writeOnFileRelatorio(destinationPath, this.tableBuscarItems.stream()
+                .map(item -> String.join(";",
+                        item.getMatricula(),
+                        item.getNome(),
+                        item.getCpf(),
+                        item.getCargo().getNome(),
+                        item.getSalario().toString(),
+                        item.getDataNascimento().format(dateFormatter),
+                        item.getDataContratacao().format(dateFormatter),
+                        item.getEstado()
+                ))
+                .toList()
+        );
+    }
+
+    private boolean askToOverwriteFile() {
+        Stage stage = (Stage) this.tableBuscar.getScene().getWindow();
+
+        ButtonType cancelar = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType sobrescrever = new ButtonType("Sobrescrever", ButtonBar.ButtonData.OK_DONE);
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+
+        alert.getButtonTypes().setAll(cancelar, sobrescrever);
+
+        alert.setTitle("Cuidado");
+        alert.setHeaderText("O arquivo relatorio.csv já existe");
+        alert.setContentText("Você tem certeza que deseja sobrescrever este arquivo?");
+        alert.initOwner(stage);
+        Optional<ButtonType> result = alert.showAndWait();
+
+        return result.isPresent() && result.get().equals(sobrescrever);
+    }
+
+    private void deleteFile(Path destinationPath) {
+        try {
+            Files.delete(destinationPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    void writeOnFileRelatorio(Path destinationPath, List<String> csvLines){
+        List<String> lines = new ArrayList<>();
+        lines.add("\uFEFF" + String.join(";",
+                "Matrícula",
+                "Nome",
+                "CPF",
+                "Cargo",
+                "Salário",
+                "Data de Nascimento",
+                "Data de Contratação",
+                "Estado"
+        ));
+
+        lines.addAll(csvLines);
+
+        try {
+            Files.write(destinationPath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Path getDownloadPath() {
+        Stage stage = (Stage) this.tableBuscar.getScene().getWindow();
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select a directory");
+        File directory = directoryChooser.showDialog(stage);
+
+        if (directory != null)
+            return directory.toPath().toAbsolutePath();
+        else
+            throw new RuntimeException("No file selected");
+    }
+
     private void updateTableBuscar(List<Funcionario> value) {
         tableBuscarItems.clear();
 
@@ -440,6 +651,7 @@ public class MainController {
                 funcionario.getCargo(),
                 funcionario.getSalario(),
                 funcionario.getDataContratacao(),
+                funcionario.getEndereco().getEstado(),
                 funcionario.getEndereco()
         );
     }
@@ -487,7 +699,7 @@ public class MainController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
 
         alert.setTitle("Info");
-        alert.setHeaderText("Endereço do cliente");
+        alert.setHeaderText("Endereço completo do cliente");
 
         VBox content = new VBox(10);
         content.getChildren().addAll(
@@ -496,8 +708,8 @@ public class MainController {
                 new Label("CEP: " + endereco.getCep()),
                 new Label("Bairro: " + endereco.getBairro()),
                 new Label("Logradouro: " + endereco.getLogradouro()),
-                new Label("Numero: " + endereco.getNumero()),
-                new Label("Complemento: " + endereco.getComplemento())
+                new Label("Numero: " + (endereco.getNumero() == null ? "" : endereco.getNumero())),
+                new Label("Complemento: " + (endereco.getComplemento() == null || endereco.getComplemento().isBlank() ? "" : endereco.getComplemento()))
         );
 
         alert.getDialogPane().setContent(content);

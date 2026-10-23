@@ -17,11 +17,13 @@ public class FuncionarioService {
         this.funcionarioRepository = funcionarioRepository;
     }
 
-    public List<Funcionario> getAllBy(String matricula, Cargo cargo, String estado){
+    public List<Funcionario> getAllBy(String matricula, Cargo cargo, String estado, Double salarioMin, Double salarioMax){
         SearchFilters filters = new SearchFilters(
                 matricula != null && !matricula.isBlank() ? matricula : null,
                 cargo,
-                estado != null && !estado.isBlank() ? estado : null
+                estado != null && !estado.isBlank() ? estado : null,
+                salarioMin,
+                salarioMax
         );
 
         return funcionarioRepository.findAll(filters);

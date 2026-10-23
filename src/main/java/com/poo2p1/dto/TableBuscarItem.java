@@ -17,9 +17,14 @@ public class TableBuscarItem {
     private final BigDecimal salario;
     private final LocalDate dataContratacao;
 
+    public String getEstado() {
+        return estado;
+    }
+
+    private final String estado;
     private final Endereco endereco;
 
-    public TableBuscarItem(String matricula, String nome, String cpf, LocalDate dataNascimento, Cargo cargo, BigDecimal salario, LocalDate dataContratacao, Endereco endereco) {
+    public TableBuscarItem(String matricula, String nome, String cpf, LocalDate dataNascimento, Cargo cargo, BigDecimal salario, LocalDate dataContratacao, String estado, Endereco endereco) {
         this.matricula = matricula;
         this.nome = nome;
         this.cpf = cpf;
@@ -27,6 +32,7 @@ public class TableBuscarItem {
         this.cargo = cargo;
         this.salario = salario;
         this.dataContratacao = dataContratacao;
+        this.estado = estado;
         this.endereco = endereco;
     }
 

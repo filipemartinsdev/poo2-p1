@@ -54,6 +54,13 @@ public class FuncionarioRepositoryCsv implements FuncionarioRepository {
                 ? (funcionario -> funcionario.getEndereco().getEstado().equalsIgnoreCase(filters.estado))
                 : funcionario -> true;
 
+        Predicate<Funcionario> salarioMinFilter = filters.salarioMin != null
+                ? (funcionario -> funcionario.getSalario().compareTo(BigDecimal.valueOf(filters.salarioMin)) >= 0)
+                : funcionario -> true;
+
+        Predicate<Funcionario> salarioMaxFilter = filters.salarioMax != null
+                ? (funcionario -> funcionario.getSalario().compareTo(BigDecimal.valueOf(filters.salarioMax)) <= 0)
+                : funcionario -> true;
 
         return readAllFuncionarios().stream()
                 .map(funcionario -> {
@@ -64,6 +71,8 @@ public class FuncionarioRepositoryCsv implements FuncionarioRepository {
                 .filter(matriculaFilter)
                 .filter(cargoFilter)
                 .filter(estadoFilter)
+                .filter(salarioMinFilter)
+                .filter(salarioMaxFilter)
                 .toList();
     }
 
